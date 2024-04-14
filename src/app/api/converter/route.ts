@@ -1,3 +1,4 @@
+import { put } from '@vercel/blob';
 import fs from 'fs';
 import { mkdir, writeFile, unlink } from 'fs/promises';
 import csv from 'csv-parser';
@@ -99,8 +100,10 @@ export async function POST(req: Request) {
         });
         await csvWriter.writeRecords(data);
 
-        // Read the converted CSV file into a buffer
-        const blob = fs.readFileSync(outputPath);
+        // Upload the converted CSV file as a blob
+        const blob = await put(outputPath, fs.createReadStream(outputPath), {
+            access: 'public',
+        });
 
         // Delete uploaded and converted files
         await unlink(filePath);
@@ -110,7 +113,7 @@ export async function POST(req: Request) {
 
         headers.set("Content-Type", "text/csv");
         headers.set('Content-Disposition', `attachment; filename=${path.basename(outputPath)}`);
-        return new NextResponse(blob, { status: 200, statusText: "OK", headers });
+        return NextResponse.json(blob, { status: 200, statusText: "OK", headers });
     } catch (error: any) {
         console.error('Error handling file upload:', error.message || error);
         return NextResponse.json({ error: "Something went wrong." }, { status: 500 });
