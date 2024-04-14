@@ -101,9 +101,11 @@ export async function POST(req: Request) {
         await csvWriter.writeRecords(data);
         const fileData = fs.readFileSync(outputPath);
 
-        // Delete uploaded and converted files
-        await unlink(filePath);
-        await unlink(outputPath);
+        setTimeout(async () => {
+            // Delete uploaded and converted files
+            await unlink(filePath);
+            await unlink(outputPath);
+        }, 10_000)
 
         const headers = new Headers();
 
