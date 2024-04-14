@@ -116,7 +116,7 @@ export async function POST(req: Request) {
         return NextResponse.json(blob, { status: 200, statusText: "OK", headers });
     } catch (error: any) {
         console.error('Error handling file upload:', error.message || error);
-        return NextResponse.json({ error: "Something went wrong." }, { status: 500 });
+        return NextResponse.json({ error: "Something went wrong (test)." }, { status: 500 });
     }
 }
 
