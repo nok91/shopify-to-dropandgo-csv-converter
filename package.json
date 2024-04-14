@@ -7,7 +7,7 @@
     "build": "bun git-info && next build",
     "start": "bun git-info && next start",
     "lint": "next lint",
-    "git-info": "tsc scripts/git_info.ts"
+    "git-info": "ts-node scripts/git_info.ts"
   },
   "dependencies": {
     "csv-parser": "^3.0.0",
@@ -18,8 +18,9 @@
     "react-aria": "^3.32.1",
     "react-aria-components": "^1.1.1",
     "react-dom": "^18",
-    "uuid": "^9.0.1",
-    "typescript": "^5.4.5"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@types/formidable": "^3.4.5",
