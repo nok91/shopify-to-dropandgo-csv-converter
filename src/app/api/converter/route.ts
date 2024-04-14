@@ -43,75 +43,74 @@ export async function POST(req: Request) {
     try {
         const formData = await req.formData();
         const file = formData.get('file') as FileType;
+
         if (!file) {
             throw new Error("File blob is required.");
         }
 
         validateUploadedFile(file)
 
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const filePath = await saveFile({
-            name: file.name,
-            type: file.type,
-            buffer,
-        });
+        const blob = await put(file.name, file, { access: 'public', contentType: 'text/csv', addRandomSuffix: true });
 
-        const data: Data[] = [];
-        await new Promise<void>((resolve, reject) => {
-            fs.createReadStream(filePath)
-                .pipe(csv())
-                .on('data', (row: any) => {
-                    const buildingNumber = sanitizeAddress(row['Shipping Street'] || row['Billing Address1'] || '');
-                    const postcode = row['Shipping Zip'] || row['Billing Zip'] || '';
-                    const description = 'Tradition clothes';
-                    data.push({
-                        'Destination country': 'United Kingdom',
-                        'Service': 'Royal Mail Tracked 24',
-                        'Building name or number': buildingNumber,
-                        'Postcode': postcode,
-                        'Item value or cover required': '20 GBP',
-                        'Description': description,
-                        'Dangerous goods': 'No',
-                        'Marketplace sold on': 'Shopify'
-                    });
-                })
-                .on('end', () => {
-                    resolve();
-                })
-                .on('error', (error) => {
-                    reject(error);
-                });
-        });
+        // const buffer = Buffer.from(await file.arrayBuffer());
+        // const filePath = await saveFile({
+        //     name: file.name,
+        //     type: file.type,
+        //     buffer,
+        // });
 
-        const outputPath = path.join(process.cwd(), "public", `${REL_UPLOAD_DIR}/output-${uuidv4()}.csv`);
-        const csvWriter = createObjectCsvWriter({
-            path: outputPath,
-            header: [
-                { id: 'Destination country', title: 'Destination country' },
-                { id: 'Service', title: 'Service' },
-                { id: 'Building name or number', title: 'Building name or number' },
-                { id: 'Postcode', title: 'Postcode' },
-                { id: 'Item value or cover required', title: 'Item value or cover required' },
-                { id: 'Description', title: 'Description' },
-                { id: 'Dangerous goods', title: 'Dangerous goods' },
-                { id: 'Marketplace sold on', title: 'Marketplace sold on' }
-            ],
-            encoding: 'utf8' // Specify UTF-8 encoding
-        });
-        await csvWriter.writeRecords(data);
-        const fileData = fs.readFileSync(outputPath);
+        // const data: Data[] = [];
+        // await new Promise<void>((resolve, reject) => {
+        //     fs.createReadStream(filePath)
+        //         .pipe(csv())
+        //         .on('data', (row: any) => {
+        //             const buildingNumber = sanitizeAddress(row['Shipping Street'] || row['Billing Address1'] || '');
+        //             const postcode = row['Shipping Zip'] || row['Billing Zip'] || '';
+        //             const description = 'Tradition clothes';
+        //             data.push({
+        //                 'Destination country': 'United Kingdom',
+        //                 'Service': 'Royal Mail Tracked 24',
+        //                 'Building name or number': buildingNumber,
+        //                 'Postcode': postcode,
+        //                 'Item value or cover required': '20 GBP',
+        //                 'Description': description,
+        //                 'Dangerous goods': 'No',
+        //                 'Marketplace sold on': 'Shopify'
+        //             });
+        //         })
+        //         .on('end', () => {
+        //             resolve();
+        //         })
+        //         .on('error', (error) => {
+        //             reject(error);
+        //         });
+        // });
 
-        setTimeout(async () => {
-            // Delete uploaded and converted files
-            await unlink(filePath);
-            await unlink(outputPath);
-        }, 10_000)
+        // const outputPath = path.join(process.cwd(), "public", `${REL_UPLOAD_DIR}/output-${uuidv4()}.csv`);
+        // const csvWriter = createObjectCsvWriter({
+        //     path: outputPath,
+        //     header: [
+        //         { id: 'Destination country', title: 'Destination country' },
+        //         { id: 'Service', title: 'Service' },
+        //         { id: 'Building name or number', title: 'Building name or number' },
+        //         { id: 'Postcode', title: 'Postcode' },
+        //         { id: 'Item value or cover required', title: 'Item value or cover required' },
+        //         { id: 'Description', title: 'Description' },
+        //         { id: 'Dangerous goods', title: 'Dangerous goods' },
+        //         { id: 'Marketplace sold on', title: 'Marketplace sold on' }
+        //     ],
+        //     encoding: 'utf8' // Specify UTF-8 encoding
+        // });
+        // await csvWriter.writeRecords(data);
+        // const fileData = fs.readFileSync(outputPath);
 
-        const headers = new Headers();
+        // setTimeout(async () => {
+        //     // Delete uploaded and converted files
+        //     await unlink(filePath);
+        //     await unlink(outputPath);
+        // }, 10_000)
 
-        headers.set("Content-Type", "text/csv");
-        headers.set('Content-Disposition', `attachment; filename=${path.basename(outputPath)}`);
-        return NextResponse.json(fileData, { status: 200, statusText: "OK", headers });
+        return NextResponse.json(blob, { status: 200, statusText: "OK" });
     } catch (error: any) {
         console.error('Error handling file upload:', error.message || error);
         return NextResponse.json({ error: "Something went wrong (test).", message: JSON.stringify(error.message || error) }, { status: 500 });
