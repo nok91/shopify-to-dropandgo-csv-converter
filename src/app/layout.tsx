@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Convert Shopify CSV to Drop & Go Format",
-  description: "This tool for seamlessly converting Shopify order CSV files to the Drop & Go CSV format. Our intuitive platform simplifies the process of transitioning your Shopify order data into a format compatible with Drop & Go services, saving you time and effort.",
+  description: "This tool for seamlessly converting Shopify order CSV files to the Drop & Go CSV format. Our intuitive platform simplifies the process of transitioning your Shopify order data into a format compatible with Drop & Go services, saving you time and effort. ",
 };
 
 export default function RootLayout({
