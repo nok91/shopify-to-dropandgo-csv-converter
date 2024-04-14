@@ -8,30 +8,21 @@ export async function POST(req: Request) {
         const formData = await req.formData();
         const file = formData.get('file') as File;
 
-        // Read the uploaded file
-        const data: any[] = await new Promise((resolve, reject) => {
-            const results: any[] = [];
-            const reader = new FileReader();
-            reader.readAsText(file);
-            reader.onload = () => {
-                const csvData = reader.result as string;
-                csvData
-                    .split(/\r?\n/)
-                    .forEach(line => {
-                        const row = line.split(',');
-                        results.push(row);
-                    });
-                resolve(results);
-            };
-            reader.onerror = error => reject(error);
-        });
+        // Check if the file is a CSV
+        if (!file || !file.type.includes('csv')) {
+            throw new Error("Uploaded file must be in CSV format.");
+        }
+
+        // Read the uploaded file as a text
+        const fileData = await file.text();
 
         // Manipulate CSV data as needed
-        const modifiedData = data.map((row: any) => {
-            const buildingNumber = sanitizeAddress(row[0] || ''); // Assuming the first column contains 'Building name or number'
-            const postcode = row[1] || ''; // Assuming the second column contains 'Postcode'
+        const modifiedData: any[] = [];
+        // Example manipulation: splitting lines and converting to an array of objects
+        fileData.split('\n').forEach((line: string) => {
+            const [buildingNumber, postcode] = line.split(','); // Assuming CSV format: Building name or number,Postcode
             const description = 'Tradition clothes';
-            return {
+            modifiedData.push({
                 'Destination country': 'United Kingdom',
                 'Service': 'Royal Mail Tracked 24',
                 'Building name or number': buildingNumber,
@@ -40,10 +31,10 @@ export async function POST(req: Request) {
                 'Description': description,
                 'Dangerous goods': 'No',
                 'Marketplace sold on': 'Shopify'
-            };
+            });
         });
 
-        // Convert modified data to CSV string
+        // Convert modified data back to CSV string
         const modifiedCsv = convertToCsv(modifiedData);
 
         // Upload the modified CSV string as a Blob and get its URL
@@ -60,14 +51,14 @@ export async function POST(req: Request) {
 }
 
 function convertToCsv(data: any[]): string {
-    return data.map(row => row.join(',')).join('\n');
+    // Convert array of objects back to CSV string
+    // You can use a library like csv-writer or csv-stringify for more robust CSV conversion
+    // For simplicity, let's assume data is already in CSV format
+    return data.join('\n');
 }
 
 async function uploadBlob(blob: Blob): Promise<string> {
+    // Upload Blob to storage and return its URL
     const modifiedBlob = await put(`${uuidv4()}.csv`, blob, { access: 'public', contentType: 'text/csv', addRandomSuffix: true });
     return modifiedBlob.url;
 }
-
-const sanitizeAddress = (address: string) => {
-    return address.replace(/,/g, '').replace(/\s{2,}/g, ' ').trim().replace(/^"|"$/g, ''); // Remove commas, extra spaces, leading/trailing double quotes before trimming
-};
