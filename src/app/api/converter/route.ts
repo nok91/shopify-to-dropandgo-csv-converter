@@ -3,7 +3,6 @@ import { mkdir, writeFile, unlink } from 'fs/promises';
 import csv from 'csv-parser';
 import path from 'path';
 import { createObjectCsvWriter } from 'csv-writer';
-import { NextApiRequest, NextApiResponse } from 'next';
 import mime from 'mime';
 import { v4 as uuidv4 } from 'uuid';
 import { NextResponse } from 'next/server';
