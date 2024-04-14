@@ -1,4 +1,5 @@
 "use client";
+import type { PutBlobResult } from '@vercel/blob';
 import { Link, FileTrigger, DropZone, Text } from 'react-aria-components';
 import type { FileDropItem } from 'react-aria';
 import React, { useState } from 'react';
@@ -10,7 +11,6 @@ function DragAndDrop() {
     const [file, setFile] = useState<File | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [pending, setPending] = useState<boolean>(false);
-
 
     const handleFileSelection = (file: File) => {
         if (file.size > 5 * 1024 * 1024) {
@@ -37,8 +37,8 @@ function DragAndDrop() {
                 method: 'POST',
                 body: formData,
             })
-            const blob = await response.blob();
-            downloadBlob({ blob })
+            const newBlob = (await response.json()) as PutBlobResult;
+            downloadBlob({ blob: newBlob })
         } catch (error) {
             console.error({ error })
             setError('An unknown error occurred while trying to upload your file.')
