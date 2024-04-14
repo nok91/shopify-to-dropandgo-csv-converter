@@ -7,7 +7,7 @@
     "build": "bun git-info && next build",
     "start": "bun git-info && next start",
     "lint": "next lint",
-    "git-info": "tsx scripts/git_info.ts"
+    "git-info": "tsc scripts/git_info.ts"
   },
   "dependencies": {
     "csv-parser": "^3.0.0",
