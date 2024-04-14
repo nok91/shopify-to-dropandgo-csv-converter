@@ -107,13 +107,8 @@ export async function POST(req: Request) {
 
         // Delete uploaded and converted files
         await unlink(filePath);
-        await unlink(outputPath);
-
-        const headers = new Headers();
-
-        headers.set("Content-Type", "text/csv");
-        headers.set('Content-Disposition', `attachment; filename=${path.basename(outputPath)}`);
-        return NextResponse.json(blob, { status: 200, statusText: "OK", headers });
+        // await unlink(outputPath);
+        return NextResponse.json(blob);
     } catch (error: any) {
         console.error('Error handling file upload:', error.message || error);
         return NextResponse.json({ error: "Something went wrong (test)." }, { status: 500 });
