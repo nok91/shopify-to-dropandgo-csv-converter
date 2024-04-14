@@ -103,12 +103,18 @@ export async function POST(req: Request) {
         // Upload the converted CSV file as a blob
         const blob = await put(outputPath, fs.createReadStream(outputPath), {
             access: 'public',
+            contentType: 'text/csv'
         });
 
         // Delete uploaded and converted files
         await unlink(filePath);
-        // await unlink(outputPath);
-        return NextResponse.json(blob);
+        await unlink(outputPath);
+
+        const headers = new Headers();
+
+        headers.set("Content-Type", "text/csv");
+        headers.set('Content-Disposition', `attachment; filename=${path.basename(outputPath)}`);
+        return NextResponse.json(blob, { status: 200, statusText: "OK", headers });
     } catch (error: any) {
         console.error('Error handling file upload:', error.message || error);
         return NextResponse.json({ error: "Something went wrong (test)." }, { status: 500 });
