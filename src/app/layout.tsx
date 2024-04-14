@@ -24,7 +24,8 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
                 window.about = {
-                  hash: '${gitInfo.gitCommitHash}'
+                  hash: '${gitInfo.gitCommitHash}',
+                  time: '${gitInfo.time}'
                 };
               `,
           }}

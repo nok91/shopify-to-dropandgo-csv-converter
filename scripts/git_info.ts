@@ -15,10 +15,12 @@ const execSyncWrapper = (command: string) => {
 (() => {
     let gitBranch = execSyncWrapper('git rev-parse --abbrev-ref HEAD');
     let gitCommitHash = execSyncWrapper('git rev-parse HEAD');
+    const time = execSyncWrapper('git log -1 --format="%cd" --date=format:"%d-%m-%y %H:%M:%S"')
 
     const obj = {
         gitBranch,
-        gitCommitHash
+        gitCommitHash,
+        time
     };
 
     const filePath = path.resolve('./', 'generated_git_info.json');
