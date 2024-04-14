@@ -1,134 +1,75 @@
 import { put } from '@vercel/blob';
-import fs from 'fs';
-import { mkdir, writeFile, unlink } from 'fs/promises';
-import csv from 'csv-parser';
-import path from 'path';
-import { createObjectCsvWriter } from 'csv-writer';
-import mime from 'mime';
-import { v4 as uuidv4 } from 'uuid';
 import { NextResponse } from 'next/server';
-
-type Data = {
-    'Destination country': string,
-    'Service': string,
-    'Building name or number': string,
-    'Postcode': string,
-    'Item value or cover required': string,
-    'Description': string,
-    'Dangerous goods': string,
-    'Marketplace sold on': string
-}
-
-type FileData = {
-    name: string;
-    type: string;
-    buffer: Buffer;
-}
-
-const REL_UPLOAD_DIR = '/tmp/uploads';
-const MAX_FILE_SIZE_MB = 5; // 5MB
-
-async function saveFile(fileData: FileData): Promise<string> {
-    const uploadDir = path.join(process.cwd(), "public", REL_UPLOAD_DIR);
-    await mkdir(uploadDir, { recursive: true });
-    const filename = `${uuidv4()}.${mime.getExtension(fileData.type)}`;
-    const filePath = path.join(uploadDir, filename);
-    await writeFile(filePath, fileData.buffer);
-    return filePath;
-}
-
-type FileType = File | null;
+import csv from 'csv-parser';
 
 export async function POST(req: Request) {
     try {
         const formData = await req.formData();
-        const file = formData.get('file') as FileType;
+        const file = formData.get('file') as File;
 
-        if (!file) {
-            throw new Error("File blob is required.");
-        }
+        // Parse the CSV data
+        const csvData = await parseCsvFile(file);
 
-        validateUploadedFile(file)
+        // Manipulate CSV data as needed
+        const modifiedData = csvData.map((row: any) => {
+            const buildingNumber = sanitizeAddress(row['Shipping Street'] || row['Billing Address1'] || '');
+            const postcode = row['Shipping Zip'] || row['Billing Zip'] || '';
+            const description = 'Tradition clothes';
+            return {
+                'Destination country': 'United Kingdom',
+                'Service': 'Royal Mail Tracked 24',
+                'Building name or number': buildingNumber,
+                'Postcode': postcode,
+                'Item value or cover required': '20 GBP',
+                'Description': description,
+                'Dangerous goods': 'No',
+                'Marketplace sold on': 'Shopify'
+            };
+        });
 
-        const blob = await put(file.name, file, { access: 'public', contentType: 'text/csv', addRandomSuffix: true });
+        // Convert modified data to CSV string
+        const modifiedCsv = convertToCsv(modifiedData);
 
-        // const buffer = Buffer.from(await file.arrayBuffer());
-        // const filePath = await saveFile({
-        //     name: file.name,
-        //     type: file.type,
-        //     buffer,
-        // });
+        // Upload the modified CSV string as a Blob and get its URL
+        const modifiedBlob = new Blob([modifiedCsv], { type: 'text/csv' });
+        const modifiedBlobUrl = await uploadBlob(modifiedBlob);
 
-        // const data: Data[] = [];
-        // await new Promise<void>((resolve, reject) => {
-        //     fs.createReadStream(filePath)
-        //         .pipe(csv())
-        //         .on('data', (row: any) => {
-        //             const buildingNumber = sanitizeAddress(row['Shipping Street'] || row['Billing Address1'] || '');
-        //             const postcode = row['Shipping Zip'] || row['Billing Zip'] || '';
-        //             const description = 'Tradition clothes';
-        //             data.push({
-        //                 'Destination country': 'United Kingdom',
-        //                 'Service': 'Royal Mail Tracked 24',
-        //                 'Building name or number': buildingNumber,
-        //                 'Postcode': postcode,
-        //                 'Item value or cover required': '20 GBP',
-        //                 'Description': description,
-        //                 'Dangerous goods': 'No',
-        //                 'Marketplace sold on': 'Shopify'
-        //             });
-        //         })
-        //         .on('end', () => {
-        //             resolve();
-        //         })
-        //         .on('error', (error) => {
-        //             reject(error);
-        //         });
-        // });
+        // Return the modified Blob URL
+        return NextResponse.json({ url: modifiedBlobUrl }, { status: 200, statusText: "OK" });
 
-        // const outputPath = path.join(process.cwd(), "public", `${REL_UPLOAD_DIR}/output-${uuidv4()}.csv`);
-        // const csvWriter = createObjectCsvWriter({
-        //     path: outputPath,
-        //     header: [
-        //         { id: 'Destination country', title: 'Destination country' },
-        //         { id: 'Service', title: 'Service' },
-        //         { id: 'Building name or number', title: 'Building name or number' },
-        //         { id: 'Postcode', title: 'Postcode' },
-        //         { id: 'Item value or cover required', title: 'Item value or cover required' },
-        //         { id: 'Description', title: 'Description' },
-        //         { id: 'Dangerous goods', title: 'Dangerous goods' },
-        //         { id: 'Marketplace sold on', title: 'Marketplace sold on' }
-        //     ],
-        //     encoding: 'utf8' // Specify UTF-8 encoding
-        // });
-        // await csvWriter.writeRecords(data);
-        // const fileData = fs.readFileSync(outputPath);
-
-        // setTimeout(async () => {
-        //     // Delete uploaded and converted files
-        //     await unlink(filePath);
-        //     await unlink(outputPath);
-        // }, 10_000)
-
-        return NextResponse.json(blob, { status: 200, statusText: "OK" });
     } catch (error: any) {
         console.error('Error handling file upload:', error.message || error);
-        return NextResponse.json({ error: "Something went wrong (test).", message: JSON.stringify(error.message || error) }, { status: 500 });
+        return NextResponse.json({ error: "Something went wrong.", message: JSON.stringify(error.message || error) }, { status: 500 });
     }
+}
+
+async function parseCsvFile(file: File): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+        const results: any[] = [];
+        const reader = new FileReader();
+        reader.onerror = () => reject(reader.error);
+        reader.onload = () => {
+            csv({ headers: true })
+                .on('data', (data: any) => results.push(data))
+                .on('end', () => resolve(results))
+                .write(reader.result as string);
+        };
+        reader.readAsText(file);
+    });
+}
+
+function convertToCsv(data: any[]): string {
+    const headers = Object.keys(data[0]);
+    const rows = data.map(row => headers.map(header => row[header]));
+    const csvArray = [headers.join(','), ...rows.map(row => row.join(','))];
+    return csvArray.join('\n');
+}
+
+async function uploadBlob(blob: Blob): Promise<string> {
+    const modifiedBlob = await put(`test`, blob, { access: 'public', contentType: 'text/csv', addRandomSuffix: true });
+    return modifiedBlob.url;
 }
 
 const sanitizeAddress = (address: string) => {
     return address.replace(/,/g, '').replace(/\s{2,}/g, ' ').trim().replace(/^"|"$/g, ''); // Remove commas, extra spaces, leading/trailing double quotes before trimming
 };
-
-async function validateUploadedFile(file: File): Promise<void> {
-    // Check file size
-    const fileSizeMB = file.size / (1024 * 1024); // Convert bytes to MB
-    if (fileSizeMB > MAX_FILE_SIZE_MB) {
-        throw new Error(`File size exceeds the maximum limit of ${MAX_FILE_SIZE_MB}MB.`);
-    }
-    // Check file type
-    if (!file.type.includes('csv')) {
-        throw new Error("Uploaded file must be in CSV format.");
-    }
-}
