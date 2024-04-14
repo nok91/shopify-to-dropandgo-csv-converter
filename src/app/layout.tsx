@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import gitInfo from "../../generated_git_info.json"
 
 const inter = Inter({ subsets: ["latin"] });
+
 
 export const metadata: Metadata = {
   title: "Convert Shopify CSV to Drop & Go Format",
@@ -16,7 +18,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+                window.about = {
+                  hash: '${gitInfo.gitCommitHash}'
+                };
+              `,
+          }}
+        />
+      </body>
     </html>
   );
 }

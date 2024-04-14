@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "dev": "bun git-info && next dev",
+    "build": "bun git-info && next build",
+    "start": "bun git-info && next start",
+    "lint": "next lint",
+    "git-info": "tsx scripts/git_info.ts"
   },
   "dependencies": {
     "csv-parser": "^3.0.0",
