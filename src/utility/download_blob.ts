@@ -7,10 +7,13 @@ export default function downloadBlob(opts: Opts) {
     const blobUrl = URL.createObjectURL(opts.blob);
     const link = document.createElement('a');
     link.href = blobUrl;
+    link.target = '_blank';
     if (opts.filename) {
         link.download = opts.filename; 
     }
     link.click();
+
+    console.log({ blobUrl })
 
     // Clean up
     URL.revokeObjectURL(blobUrl);
