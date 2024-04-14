@@ -1,19 +1,35 @@
 import { put } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 import csv from 'csv-parser';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: Request) {
     try {
         const formData = await req.formData();
         const file = formData.get('file') as File;
 
-        // Parse the CSV data
-        const csvData = await parseCsvFile(file);
+        // Read the uploaded file
+        const data: any[] = await new Promise((resolve, reject) => {
+            const results: any[] = [];
+            const reader = new FileReader();
+            reader.readAsText(file);
+            reader.onload = () => {
+                const csvData = reader.result as string;
+                csvData
+                    .split(/\r?\n/)
+                    .forEach(line => {
+                        const row = line.split(',');
+                        results.push(row);
+                    });
+                resolve(results);
+            };
+            reader.onerror = error => reject(error);
+        });
 
         // Manipulate CSV data as needed
-        const modifiedData = csvData.map((row: any) => {
-            const buildingNumber = sanitizeAddress(row['Shipping Street'] || row['Billing Address1'] || '');
-            const postcode = row['Shipping Zip'] || row['Billing Zip'] || '';
+        const modifiedData = data.map((row: any) => {
+            const buildingNumber = sanitizeAddress(row[0] || ''); // Assuming the first column contains 'Building name or number'
+            const postcode = row[1] || ''; // Assuming the second column contains 'Postcode'
             const description = 'Tradition clothes';
             return {
                 'Destination country': 'United Kingdom',
@@ -43,30 +59,12 @@ export async function POST(req: Request) {
     }
 }
 
-async function parseCsvFile(file: File): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-        const results: any[] = [];
-        const reader = new FileReader();
-        reader.onerror = () => reject(reader.error);
-        reader.onload = () => {
-            csv({ headers: true })
-                .on('data', (data: any) => results.push(data))
-                .on('end', () => resolve(results))
-                .write(reader.result as string);
-        };
-        reader.readAsText(file);
-    });
-}
-
 function convertToCsv(data: any[]): string {
-    const headers = Object.keys(data[0]);
-    const rows = data.map(row => headers.map(header => row[header]));
-    const csvArray = [headers.join(','), ...rows.map(row => row.join(','))];
-    return csvArray.join('\n');
+    return data.map(row => row.join(',')).join('\n');
 }
 
 async function uploadBlob(blob: Blob): Promise<string> {
-    const modifiedBlob = await put(`test`, blob, { access: 'public', contentType: 'text/csv', addRandomSuffix: true });
+    const modifiedBlob = await put(`${uuidv4()}.csv`, blob, { access: 'public', contentType: 'text/csv', addRandomSuffix: true });
     return modifiedBlob.url;
 }
 
