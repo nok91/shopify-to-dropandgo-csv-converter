@@ -37,8 +37,10 @@ function DragAndDrop() {
                 method: 'POST',
                 body: formData,
             })
-            const newBlob = (await response.json()) as PutBlobResult;
-            downloadBlob({ blob: newBlob })
+            const blob = (await response.blob());
+            // Create a Blob object
+            const fileBlob = new Blob([blob], { type: 'application/octet-stream' });
+            downloadBlob({ blob: fileBlob })
         } catch (error) {
             console.error({ error })
             setError('An unknown error occurred while trying to upload your file.')

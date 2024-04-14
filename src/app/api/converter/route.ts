@@ -99,12 +99,7 @@ export async function POST(req: Request) {
             encoding: 'utf8' // Specify UTF-8 encoding
         });
         await csvWriter.writeRecords(data);
-
-        // Upload the converted CSV file as a blob
-        const blob = await put(outputPath, fs.createReadStream(outputPath), {
-            access: 'public',
-            contentType: 'text/csv'
-        });
+        const fileData = fs.readFileSync(outputPath);
 
         // Delete uploaded and converted files
         await unlink(filePath);
@@ -114,7 +109,7 @@ export async function POST(req: Request) {
 
         headers.set("Content-Type", "text/csv");
         headers.set('Content-Disposition', `attachment; filename=${path.basename(outputPath)}`);
-        return NextResponse.json(blob, { status: 200, statusText: "OK", headers });
+        return NextResponse.json(fileData, { status: 200, statusText: "OK", headers });
     } catch (error: any) {
         console.error('Error handling file upload:', error.message || error);
         return NextResponse.json({ error: "Something went wrong (test)." }, { status: 500 });
