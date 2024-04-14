@@ -18,7 +18,8 @@
     "react-aria": "^3.32.1",
     "react-aria-components": "^1.1.1",
     "react-dom": "^18",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "typescript": "^5.4.5"
   },
   "devDependencies": {
     "@types/formidable": "^3.4.5",
@@ -29,6 +30,5 @@
     "@types/uuid": "^9.0.8",
     "eslint": "^8",
     "eslint-config-next": "14.2.1",
-    "typescript": "^5.4.5"
   }
 }
