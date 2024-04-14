@@ -25,7 +25,7 @@ type FileData = {
     buffer: Buffer;
 }
 
-const REL_UPLOAD_DIR = '/uploads';
+const REL_UPLOAD_DIR = '/tmp/uploads';
 const MAX_FILE_SIZE_MB = 5; // 5MB
 
 async function saveFile(fileData: FileData): Promise<string> {
